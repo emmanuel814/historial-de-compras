@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Compras Valtucon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+font-family:Arial;
+background:#f4f6f8;
+padding:20px;
+}
+
+.container{
+background:white;
+padding:20px;
+border-radius:10px;
+max-width:700px;
+margin:auto;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:15px;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:6px;
+background:#007bff;
+color:white;
+cursor:pointer;
+margin-bottom:10px;
+font-size:16px;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+.eliminar{
+background:#dc3545;
+}
+
+.total{
+font-size:20px;
+font-weight:bold;
+margin-top:20px;
+color:#2e7d32;
+}
+
+li{
+background:#f1f1f1;
+padding:12px;
+margin-bottom:8px;
+border-radius:5px;
+display:flex;
+flex-direction:column;
+}
+
+@media (min-width:600px){
+li{
+flex-direction:row;
+justify-content:space-between;
+align-items:center;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="login">
+<h2>Acceso al sistema Valtucon</h2>
+
+<label>Contraseña</label>
+<input type="password" id="clave">
+
+<button onclick="verificar()">Entrar</button>
+</div>
+
+<div id="contenido" style="display:none;">
+
+<h1>Registro de Compras</h1>
+
+<label>Buscar producto</label>
+<input type="text" id="buscador" onkeyup="buscarProducto()">
+
+<label>Producto</label>
+<input type="text" id="producto">
+
+<label>Marca</label>
+<input type="text" id="marca">
+
+<label>Precio</label>
+<input type="number" id="precio">
+
+<label>Cantidad</label>
+<input type="number" id="cantidad">
+
+<label>Unidad</label>
+<select id="unidad">
+<option>Metros</option>
+<option>Centímetros</option>
+<option>Kilogramos</option>
+<option>Metro lineal</option>
+<option>Metro cuadrado</option>
+<option>Metro cúbico</option>
+</select>
+
+<label>Fecha</label>
+<input type="date" id="fecha">
+
+<button onclick="guardarCompra()">Guardar compra</button>
+<button onclick="exportarExcel()">Exportar Excel</button>
+<button onclick="borrarHistorial()">Borrar historial</button>
+
+<h2>Historial</h2>
+
+<ul id="historial"></ul>
+
+<div class="total">
+Total gastado: $<span id="total">0</span>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function verificar(){
+let claveCorrecta="emmanuel271109";
+let clave=document.getElementById("clave").value;
+
+if(clave===claveCorrecta){
+document.getElementById("login").style.display="none";
+document.getElementById("contenido").style.display="block";
+mostrarHistorial();
+}else{
+alert("Contraseña incorrecta");
+}
+}
+
+let historial = JSON.parse(localStorage.getItem("compras")) || [];
+
+function mostrarHistorial(){
+
+let lista=document.getElementById("historial");
+lista.innerHTML="";
+
+let total=0;
+
+historial.forEach(function(compra,index){
+
+let precio=parseFloat(compra.precio);
+let cantidad=parseFloat(compra.cantidad);
+
+let subtotal=precio*cantidad;
+total+=subtotal;
+
+let item=document.createElement("li");
+
+item.innerHTML=
+"<div>"+
+"<strong>"+compra.producto+"</strong><br>"+
+"Marca: "+compra.marca+"<br>"+
+"Precio: $"+precio+"<br>"+
+"Cantidad: "+cantidad+" "+compra.unidad+"<br>"+
+"Fecha: "+compra.fecha+"<br>"+
+"<b>Subtotal: $"+subtotal+"</b>"+
+"</div>"+
+"<button class='eliminar' onclick='eliminarCompra("+index+")'>Eliminar</button>";
+
+lista.appendChild(item);
+
+});
+
+document.getElementById("total").textContent=total.toFixed(2);
+
+}
+
+function guardarCompra(){
+
+let producto=document.getElementById("producto").value;
+let marca=document.getElementById("marca").value;
+let precio=document.getElementById("precio").value;
+let cantidad=document.getElementById("cantidad").value;
+let unidad=document.getElementById("unidad").value;
+let fecha=document.getElementById("fecha").value;
+
+if(producto==""||marca==""||precio==""||cantidad==""||fecha==""){
+alert("Llena todos los campos");
+return;
+}
+
+let compra={
+producto:producto,
+marca:marca,
+precio:precio,
+cantidad:cantidad,
+unidad:unidad,
+fecha:fecha
+};
+
+historial.push(compra);
+
+localStorage.setItem("compras",JSON.stringify(historial));
+
+mostrarHistorial();
+
+document.getElementById("producto").value="";
+document.getElementById("marca").value="";
+document.getElementById("precio").value="";
+document.getElementById("cantidad").value="";
+document.getElementById("fecha").value="";
+}
+
+function eliminarCompra(index){
+
+if(confirm("Eliminar compra?")){
+
+historial.splice(index,1);
+
+localStorage.setItem("compras",JSON.stringify(historial));
+
+mostrarHistorial();
+}
+
+}
+
+function buscarProducto(){
+
+let filtro=document.getElementById("buscador").value.toLowerCase();
+
+let items=document.querySelectorAll("#historial li");
+
+items.forEach(function(item){
+
+if(item.textContent.toLowerCase().includes(filtro)){
+item.style.display="flex";
+}else{
+item.style.display="none";
+}
+
+});
+
+}
+
+function exportarExcel(){
+
+let csv="Producto,Marca,Precio,Cantidad,Unidad,Fecha\n";
+
+historial.forEach(function(c){
+csv+=c.producto+","+c.marca+","+c.precio+","+c.cantidad+","+c.unidad+","+c.fecha+"\n";
+});
+
+let blob=new Blob([csv],{type:"text/csv"});
+
+let url=window.URL.createObjectURL(blob);
+
+let a=document.createElement("a");
+
+a.href=url;
+a.download="historial_valtucon.csv";
+a.click();
+}
+
+function borrarHistorial(){
+
+if(confirm("Borrar todo el historial?")){
+
+localStorage.removeItem("compras");
+historial=[];
+mostrarHistorial();
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
